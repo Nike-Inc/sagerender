@@ -3,8 +3,8 @@ USER root
 
 ENV POETRY_VERSION=1.4.1
 # Clean up APT when done.
-RUN apt-get update && \
-    apt-get -y install \
+RUN apt update && \
+    apt -y install \
         build-essential \
         zlib1g-dev \
         libssl-dev \
@@ -18,11 +18,11 @@ RUN apt-get update && \
         libbz2-dev \
         liblzma-dev \
         postgresql-client --no-install-recommends && \
-    apt-get clean && \
+    apt clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir poetry==$POETRY_VERSION \
+RUN pip3 install poetry==$POETRY_VERSION \
     && poetry config virtualenvs.create false
 
 ARG NB_UID="1000"
@@ -33,12 +33,12 @@ ENV SAGERENDER_USER=sagerender
 USER root
 # Setup the "sagemaker" user with root privileges.
 RUN \
-    apt-get update && \
-    apt-get install -y sudo && \
+    apt update && \
+    apt install -y sudo && \
     useradd -m -s /bin/bash -N -u $NB_UID $SAGERENDER_USER && \
     chmod g+w /etc/passwd && \
     echo "${SAGERENDER_USER}    ALL=(ALL)    NOPASSWD:    ALL" >> /etc/sudoers && \
-    # Prevent apt-get cache from being persisted to this layer.
+    # Prevent apt cache from being persisted to this layer.
     rm -rf /var/lib/apt/lists/*
 
 
@@ -56,3 +56,5 @@ WORKDIR $SAGERENDER_PROJECT_DIR/$SAGERENDER_PROJECT/
 RUN poetry install && poetry cache clear --all .
 
 USER $SAGERENDER_USER
+
+CMD ["sagerender"]

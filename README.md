@@ -1,13 +1,13 @@
 # SageRender
 ---
 [![codecov](https://codecov.io/gh/Nike-Inc/sagerender/branch/main/graph/badge.svg?token=0TvSUJHvH2)](https://codecov.io/gh/Nike-Inc/sagerender)
-[![Test](https://github.com/Nike-Inc/sagerender/actions/workflows/python-test.yaml/badge.svg)](https://github.com/Nike-Inc/sagerender/actions/workflows/python-test.yaml) 
-[![PyPi Release](https://github.com/Nike-Inc/sagerender/actions/workflows/python-build.yaml/badge.svg)](https://github.com/Nike-Inc/sagerender/actions/workflows/python-build.yaml) 
+[![Test](https://github.com/Nike-Inc/sagerender/actions/workflows/python-test.yaml/badge.svg?branch=main)](https://github.com/Nike-Inc/sagerender/actions/workflows/python-test.yaml?branch=main)
+[![PyPi Release](https://github.com/Nike-Inc/sagerender/actions/workflows/python-build.yaml/badge.svg?branch=main)](https://github.com/Nike-Inc/sagerender/actions/workflows/python-build.yaml?branch=main) 
 [![Docker Build](https://github.com/Nike-Inc/sagerender/actions/workflows/docker-build.yaml/badge.svg)](https://github.com/Nike-Inc/sagerender/actions/workflows/docker-build.yaml)
-![License](https://img.shields.io/pypi/l/knockoff)
-![Python Versions](https://img.shields.io/pypi/pyversions/knockoff)
+![GitHub License](https://img.shields.io/github/license/Nike-Inc/sagerender)
+![Python Versions](https://img.shields.io/pypi/pyversions/sagerender)
 ![Docker Image Size](https://img.shields.io/docker/image-size/nikelab222/sagerender/latest)
-![Python Wheel](https://img.shields.io/pypi/wheel/knockoff)
+![Python Wheel](https://img.shields.io/pypi/wheel/sagerender)
 
 ![](extras/sagerender-pipeline-design.png)
 

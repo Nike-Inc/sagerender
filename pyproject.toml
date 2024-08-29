@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sagerender"
-version = "2.1.0"
+version = "2.1.1"
 description = "A library for configuring SageMaker pipelines using hierarchical configuration pattern."
 authors = [
     "Mohamed Abdul Huq Ismail <Abdul.Ismail@nike.com>",

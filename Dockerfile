@@ -1,7 +1,7 @@
 FROM python:3.10-bullseye
 USER root
 
-ENV POETRY_VERSION 1.4.1
+ENV POETRY_VERSION=1.4.1
 # Clean up APT when done.
 RUN apt-get update && \
     apt-get -y install \
@@ -28,7 +28,7 @@ RUN pip3 install --no-cache-dir poetry==$POETRY_VERSION \
 ARG NB_UID="1000"
 ARG NB_GID="100"
 
-ENV SAGERENDER_USER sagerender
+ENV SAGERENDER_USER=sagerender
 
 USER root
 # Setup the "sagemaker" user with root privileges.
@@ -42,8 +42,8 @@ RUN \
     rm -rf /var/lib/apt/lists/*
 
 
-ENV SAGERENDER_PROJECT sagerender
-ENV SAGERENDER_PROJECT_DIR /opt/code
+ENV SAGERENDER_PROJECT=sagerender
+ENV SAGERENDER_PROJECT_DIR=/opt/code
 
 RUN mkdir -p $SAGERENDER_PROJECT_DIR/$SAGERENDER_PROJECT
 COPY --chown=$SAGERENDER_USER:$NB_GID ./pyproject.toml ./poetry.lock ./README.md $SAGERENDER_PROJECT_DIR/$SAGERENDER_PROJECT

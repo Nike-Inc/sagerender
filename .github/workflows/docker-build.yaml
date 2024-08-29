@@ -31,7 +31,8 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          platforms: linux/amd64,linux/arm64
+          # XXX - linux/arm64 has issues installing ruamel.yaml.clib 0.2.8
+          platforms: linux/amd64
           tags: nikelab222/pterradactyl:latest,nikelab222/pterradactyl:${{ env.VERSION }}
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

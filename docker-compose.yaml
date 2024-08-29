@@ -1,0 +1,21 @@
+---
+services:
+  sagerender:
+    container_name: sagerender
+    volumes:
+      - ${PWD}:${PWD}
+      - ${HOME}/.aws/credentials:/home/sagerender/.aws/credentials
+    working_dir: ${PWD}
+    environment:
+      USER: $USER
+    entrypoint:
+      - bash
+    # If the image does not exist in the configured location or
+    # access is denied, docker compose will build the image locally,
+    # tag it using the configured image value and use it.
+    image: nikelab222/sagerender:2.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    tty: true  # docker run -t

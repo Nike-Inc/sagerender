@@ -1,0 +1,16 @@
+---
+backends:
+  - yaml
+
+context:
+  - env
+  - algorithm
+
+# The order of precedence is from least to most
+hierarchy:
+  - common
+  - "environment/%{env}"
+  - "algorithm/%{algorithm}"
+
+yaml:
+  datadir: examples/complex

@@ -1,0 +1,18 @@
+---
+backends:
+  - yaml
+
+# Define context, context variables can be arbitrary.
+# In this example, let's use familiar ones such as:
+# env: Name of the environment, which can be prod, dev, qa
+context:
+  - env
+
+# The order of precedence is from least to most.
+hierarchy:
+  - common
+  - "environment/%{env}"
+
+yaml:
+  # datadir folder
+  datadir: examples/simple

@@ -1,0 +1,33 @@
+---
+# Copyright 2024-present, Nike, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the Apache-2.0 license found in
+# the LICENSE file in the root directory of this source tree.
+
+cerberus:
+  sdb:
+    team: app/test/team_info
+    network: app/test/network
+
+session_bucket: test-bucket
+
+tags:
+  - Key: team
+    Value: test
+
+test-pipeline:
+  name: test-pipeline
+  parameters:
+    param-1:
+      type: sagemaker.workflow.parameters:ParameterString
+      default_value: null
+
+test-pipeline-with-configured-options:
+  name: test-pipeline
+
+  max_parallel_execution_steps: 5
+  use_custom_job_prefix: true
+  pipeline_experiment_config:
+    # experiment_name: some-experiment-name
+    trial_name: some-experiment-trial

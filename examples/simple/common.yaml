@@ -1,0 +1,86 @@
+---
+sagemaker:
+  processor:
+    base: sagemaker.workflow.steps:Processor
+    pyspark: sagemaker.spark.processing:PySparkProcessor
+
+images:
+  sagerender: 141212562619.dkr.ecr.us-west-2.amazonaws.com/sagerender:latest
+  demand_etl: 141212562619.dkr.ecr.us-west-2.amazonaws.com/demand-etl-sagemaker:git-eacf7745d0
+
+session_bucket: "%{lookup('bucket_prefix')}-%{team}"
+
+tags:
+  - Key: team
+    Value: "%{team}"
+
+local-pipeline:
+  # Name of the pipeline, if not defined then above key is used as pipeline name
+  name: "%{env}-local-pipeline"
+  processor-step:
+    processor: "%{lookup('sagemaker.processor.base')}"
+    processor_kwargs:
+      base_job_name: local-test-job
+      instance_type: ml.t3.medium
+      instance_count: 1
+      image_uri: "%{lookup('images.sagerender')}"
+      entrypoint:
+        - echo
+    step_kwargs:
+      arguments:
+        - environment
+        - executed
+
+local-pipeline-with-cache-config:
+  # Name of the pipeline, if not defined then above key is used as pipeline name
+  name: "%{env}-local-pipeline"
+  processor-step:
+    processor: "%{lookup('sagemaker.processor.base')}"
+    processor_kwargs:
+      base_job_name: local-test-job
+      instance_type: ml.t3.medium
+      instance_count: 1
+      image_uri: "%{lookup('images.sagerender')}"
+      entrypoint:
+        - echo
+    step_kwargs:
+      arguments:
+        - environment
+        - executed
+
+local-pipeline-with-retry-policies:
+  # Name of the pipeline, if not defined then above key is used as pipeline name
+  name: "%{env}-local-pipeline"
+  processor-step:
+    processor: "%{lookup('sagemaker.processor.base')}"
+    processor_kwargs:
+      base_job_name: local-test-job
+      instance_type: ml.t3.medium
+      instance_count: 1
+      image_uri: "%{lookup('images.sagerender')}"
+      entrypoint:
+        - echo
+    step_kwargs:
+      arguments:
+        - environment
+        - executed
+    retry_policies:
+      - policy: sagemaker.workflow.retry:SageMakerJobStepRetryPolicy
+        kwargs:
+          exception_types:
+            - sagemaker.workflow.retry:SageMakerJobExceptionTypeEnum:INTERNAL_ERROR
+            - sagemaker.workflow.retry:SageMakerJobExceptionTypeEnum:CAPACITY_ERROR
+            - sagemaker.workflow.retry:SageMakerJobExceptionTypeEnum:RESOURCE_LIMIT
+          interval_seconds: 1
+          backoff_rate: 2
+          max_attempts: 2
+          expire_after_mins: 10
+      - policy: sagemaker.workflow.retry:StepRetryPolicy
+        kwargs:
+          exception_types:
+            - sagemaker.workflow.retry:StepExceptionTypeEnum:SERVICE_FAULT
+            - sagemaker.workflow.retry:StepExceptionTypeEnum:THROTTLING
+          interval_seconds: 1
+          backoff_rate: 2
+          max_attempts: 2
+          expire_after_mins: 10

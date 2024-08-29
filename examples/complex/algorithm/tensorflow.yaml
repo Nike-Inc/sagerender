@@ -1,0 +1,33 @@
+---
+standard-model-training-pipeline:
+  training-step:
+    estimator: sagemaker.tensorflow.estimator:TensorFlow
+    estimator_kwargs:
+      instance_count: 1
+      instance_type: ml.m4.xlarge
+      image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/custom-tensorflow-image:git-1234xyz
+      entry_point: examples/scripts/run_step.py
+      output_path: "%{lookup('s3_bucket_prefix')}/tensorflow-model"
+      hyperparameters:
+        EPOCHS: 3
+        LEARNING_RATE: 1e-3
+        WEIGHT_DECAY: 1e-4
+
+  create-model-step:
+    model_kwargs: &model-kwargs
+      image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/custom-tensorflow-inference:git-1234xyz
+
+  register-model-step:
+    model_kwargs: *model-kwargs
+
+  create-register-model-or-fail-step:
+    conditions:
+      - factory_function: sagemaker.workflow.conditions:ConditionLessThanOrEqualTo
+        kwargs:
+          left:
+            factory_function: sagemaker.workflow.functions:JsonGet
+            kwargs:
+              step_name: "%{algorithm}-evaluate-step"
+              property_file: EvaluationReport
+              json_path: metric.WMAPE
+          right: 0.72

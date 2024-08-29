@@ -1,0 +1,7 @@
+---
+cerberus:
+  sdb:
+    team: "app/at-platform0-uswest2-%{team}/team_info"
+    network: "app/at-platform0-uswest2-%{team}/us-west-2/vpc"
+
+bucket_prefix: "at-%{team}0-uswest2"

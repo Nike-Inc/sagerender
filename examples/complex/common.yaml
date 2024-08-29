@@ -1,0 +1,169 @@
+---
+session_bucket: "%{lookup('bucket_prefix')}-scratchpad"
+
+s3_bucket_prefix: "s3://%{lookup('bucket_prefix')}-artifacts/some-prefix"
+
+tags:
+  - Key: team
+    Value: "%{team}"
+
+standard-model-training-pipeline:
+  name: "%{algorithm}-train-pipeline"
+
+  preprocessing-step:
+    name: "%{algorithm}-preprocessing-step"
+    processor: sagemaker.processing:Processor
+    processor_kwargs:
+      base_job_name: preprocessing-step
+      instance_type: ml.t3.medium
+      instance_count: 1
+      image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/preprocessing-image-name:image-tag
+      entrypoint: ["python", "/opt/aiml/preprocessing.py"]
+      env:
+        ARTIFACT_STORE_SCHEME: s3
+        ARTIFACT_STORE_BUCKET: "ct-%{team}0-uswest2-artifacts"
+    step_kwargs:
+      inputs:
+        - factory_function: sagemaker.processing:ProcessingInput
+          kwargs:
+            input_name: demand-config
+            source: demand-config/demand-etl.yaml
+            destination: /opt/ml/inputs/demand-config
+      outputs:
+        - factory_function: sagemaker.processing:ProcessingOutput
+          kwargs:
+            output_name: job-output
+            source: /opt/ml/output/job_output
+            destination: s3://test-bucket/output/path
+      arguments:
+        - --job-config-name
+        - job-name
+        - --config-path
+        - /opt/ml/inputs/demand-config/demand-etl.yaml
+
+  training-step:
+    name: "%{algorithm}-train-step"
+    fit_kwargs:
+      inputs:
+        train:
+          factory_function: sagemaker.inputs:TrainingInput
+          kwargs:
+            s3_data: "%{lookup('s3_bucket_prefix')}/some-train.jsonl"
+            content_type: json
+        test:
+          factory_function: sagemaker.inputs:TrainingInput
+          kwargs:
+            s3_data: "%{lookup('s3_bucket_prefix')}/some-test.jsonl"
+            content_type: json
+    depends_on:
+      - "%{algorithm}-preprocessing-step"
+
+  evaluation-step:
+    name: "%{algorithm}-evaluate-step"
+    processor: sagemaker.processing:Processor
+    processor_kwargs:
+      base_job_name: evaluate-step
+      instance_type: ml.t3.medium
+      instance_count: 1
+      image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/preprocessing-image-name:image-tag
+      entrypoint: ["python", "/opt/aiml/evaluate.py"]
+    step_kwargs:
+      arguments:
+        - --algorithm
+        - "%{algorithm}"
+        - --model-path
+        - "%{algorithm}-train-step.properties.ModelArtifacts.S3ModelArtifacts"
+        - --baseline-model-path
+        - "%{lookup('s3_bucket_prefix')}/baseline-model.p"
+        - --sample-queries
+        - "%{lookup('s3_bucket_prefix')}/sample-queries.p"
+        - --evaluation-report-path
+        - /opt/ml/output/evaluation-report/evaluation-report.json
+      outputs:
+        - factory_function: sagemaker.processing:ProcessingOutput
+          kwargs:
+            source: /opt/ml/output/evaluation-report
+            destination: "%{lookup('s3_bucket_prefix')}/some-evaluation.json"
+            output_name: evaluation-report
+    property_files:
+      - factory_function: sagemaker.workflow.properties:PropertyFile
+        kwargs:
+          name: EvaluationReport
+          output_name: evaluation-report
+          path: evaluation-report.json
+    depends_on:
+      - "%{algorithm}-train-step"
+
+  create-model-step:
+    name: "%{algorithm}-create-model-step"
+    model: sagemaker.model:Model
+    model_kwargs: &model-kwargs
+      name: test-model
+      model_data: "%{algorithm}-train-step.properties.ModelArtifacts.S3ModelArtifacts"
+    create_model_kwargs:
+      instance_type: ml.m4.xlarge
+
+  register-model-step:
+    name: "%{algorithm}-register-model-step"
+    model: sagemaker.model:Model
+    model_kwargs: *model-kwargs
+    register_model_kwargs:
+      content_types:
+        - application/json
+      response_types:
+        - application/json
+      inference_instances:
+        - ml.m4.xlarge
+      transform_instances:
+        - ml.m4.xlarge
+      model_package_group_name: "%{algorithm}-model"
+      model_metrics:
+        factory_function: sagemaker.model_metrics:ModelMetrics
+        kwargs:
+          model_statistics:
+            factory_function: sagemaker.model_metrics:MetricsSource
+            kwargs:
+              s3_uri: "%{lookup('s3_bucket_prefix')}/some-evaluation.json"
+              content_type: application/json
+      metadata_properties:
+        factory_function: sagemaker.metadata_properties:MetadataProperties
+        kwargs:
+          commit_id: ${GIT_SHA}
+          repository: ${GIT_REPO_URL}
+          generated_by: team-alpha
+          project_id: project-beta
+      approval_status: Approved
+      drift_check_baselines:
+        factory_function: sagemaker.drift_check_baselines:DriftCheckBaselines
+        kwargs:
+          model_data_statistics:
+            factory_function: sagemaker.model_metrics:MetricsSource
+            kwargs:
+              s3_uri: "%{lookup('s3_bucket_prefix')}/some-statistics.json"
+              content_type: application/json
+          model_data_constraints:
+            factory_function: sagemaker.model_metrics:MetricsSource
+            kwargs:
+              s3_uri: "%{lookup('s3_bucket_prefix')}/some-constraints.json"
+              content_type: application/json
+      customer_metadata_properties:
+        data_owner: data-team
+        model_owner: data-science-team
+        pipeline_owner: engineering-team
+      domain: MACHINE_LEARNING
+      task: REGRESSION
+      sample_payload_url: "%{lookup('s3_bucket_prefix')}/some-payload.jsonl"
+
+  fail-step:
+    name: "%{algorithm}-fail-step"
+    error_message: Pipeline failed due to model evaluation.
+
+  create-register-model-or-fail-step:
+    name: "%{algorithm}-create-register-model-or-fail-condition-step"
+    if_steps:
+      - "%{algorithm}-create-model-step"
+      - "%{algorithm}-register-model-step"
+    else_steps:
+      - "%{algorithm}-fail-step"
+    depends_on:
+      - "%{algorithm}-evaluate-step"

@@ -1,0 +1,653 @@
+---
+# Copyright 2024-present, Nike, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the Apache-2.0 license found in
+# the LICENSE file in the root directory of this source tree.
+
+# Configuration to test `ConditionStep`
+condition-step:
+  name: test-condition-step
+  conditions:
+    - factory_function: sagemaker.workflow.conditions:ConditionGreaterThan
+      kwargs:
+        left: 10
+        right: 20
+  if_steps:
+    - step-0
+  else_steps:
+    - step-1
+  depends_on:
+    - follow-step
+
+
+# Configuration to test `AutoMLStep`
+automl-step:
+  name: test-automl-step
+  automl_kwargs:
+    target_attribute_name: gross_sales
+    output_path: s3://some-bucket/some-prefix/automl-output
+    mode: ENSEMBLING
+  fit_kwargs:
+    inputs:
+      - factory_function: sagemaker.automl.automl:AutoMLInput
+        kwargs:
+          inputs: s3://some-bucket/some-prefix/train_input.jsonl
+          target_attribute_name: gross_sales
+          channel_type: training
+      - factory_function: sagemaker.automl.automl:AutoMLInput
+        kwargs:
+          inputs: s3://some-bucket/some-prefix/validation_input.jsonl
+          target_attribute_name: gross_sales
+          channel_type: validation
+
+
+# Configuration to test `CallbackStep`
+callback-step:
+  name: test-callback-step
+  sqs_queue_url: https://sqs.us-west-2.amazonaws.com/012345678901/TestCallbackQueue
+  inputs:
+    pipeline_owner: test-owner
+    pipeline_name: test-pipeline
+  outputs:
+    - factory_function: sagemaker.workflow.callback_step:CallbackOutput
+      kwargs:
+        output_name: test-output
+        output_type:
+          factory_enum: sagemaker.workflow.callback_step:CallbackOutputTypeEnum:String
+
+
+# Configuration to test `ModelStep` with `Model.create`
+create-model-step:
+  name: test-create-model-step
+  model: sagemaker.model:Model
+  model_kwargs: &model_kwargs
+    name: test-model
+    image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/repo-name:repo-tag
+    model_data: s3://some-bucket/some-prefix/model.tar.gz
+  create_model_kwargs:
+    instance_type: ml.t3.medium
+
+
+# Configuration to test `ClarifyCheckStep` with DataBiasCheckConfig
+data-bias-clarify-check-step:
+  name: test-data-bias-clarify-check-step
+  check_job_config_kwargs:
+    base_job_name: data-quality-check-job
+    instance_count: 1
+    instance_type: ml.t3.medium
+  clarify_check_config:
+    factory_function: sagemaker.workflow.clarify_check_step:DataBiasCheckConfig
+    kwargs:
+      data_bias_config:
+        factory_function: sagemaker.clarify:BiasConfig
+        kwargs:
+          label_values_or_threshold:
+            - 15.0
+          facet_name:
+            - 8
+          facet_values_or_threshold:
+            - [0.5]
+      data_config:
+        factory_function: sagemaker.clarify:DataConfig
+        kwargs:
+          s3_data_input_path: s3://some-bucket/some-prefix/train.jsonl
+          s3_output_path: s3://some-bucket/some-prefix/data-bias-check-step
+          label: 0
+          dataset_type: application/jsonlines
+          s3_analysis_config_output_path: s3://some-bucket/some-prefix/data-bias-analysis-output-path
+      methods: all
+  skip_check: false
+  register_new_baseline: true
+
+
+# Configuration to test `ClarifyCheckStep` with ModelBiasCheckConfig
+model-bias-clarify-check-step:
+  name: test-model-bias-clarify-check-step
+  check_job_config_kwargs:
+    base_job_name: data-quality-check-job
+    instance_count: 1
+    instance_type: ml.t3.medium
+  clarify_check_config:
+    factory_function: sagemaker.workflow.clarify_check_step:ModelBiasCheckConfig
+    kwargs:
+      data_bias_config:
+        factory_function: sagemaker.clarify:BiasConfig
+        kwargs:
+          label_values_or_threshold:
+            - 15.0
+          facet_name:
+            - 8
+          facet_values_or_threshold:
+            - [0.5]
+      data_config:
+        factory_function: sagemaker.clarify:DataConfig
+        kwargs:
+          s3_data_input_path: s3://some-bucket/some-prefix/train.jsonl
+          s3_output_path: s3://some-bucket/some-prefix/data-bias-check-step
+          label: 0
+          dataset_type: application/jsonlines
+          s3_analysis_config_output_path: s3://some-bucket/some-prefix/data-bias-analysis-output-path
+      model_config:
+        factory_function: sagemaker.clarify:ModelConfig
+        kwargs:
+          model_name: test-model
+          instance_count: 1
+          instance_type: ml.t3.medium
+          accept_type: application/json
+          content_type: application/json
+          content_template: "$records"
+          record_template: "$.features"
+      model_predicted_label_config:
+        factory_function: sagemaker.clarify:ModelPredictedLabelConfig
+        kwargs:
+          label: "$SageMakerOutput.prediction"
+      methods: all
+  skip_check: false
+  register_new_baseline: true
+
+
+# Configuration to test `ClarifyCheckStep` with ModelExplainabilityCheckConfig
+model-explainability-clarify-check-step:
+  name: test-model-bias-clarify-check-step
+  check_job_config_kwargs:
+    base_job_name: data-quality-check-job
+    instance_count: 1
+    instance_type: ml.t3.medium
+  clarify_check_config:
+    factory_function: sagemaker.workflow.clarify_check_step:ModelExplainabilityCheckConfig
+    kwargs:
+      data_config:
+        factory_function: sagemaker.clarify:DataConfig
+        kwargs:
+          s3_data_input_path: s3://some-bucket/some-prefix/train.jsonl
+          s3_output_path: s3://some-bucket/some-prefix/data-bias-check-step
+          label: 0
+          dataset_type: application/jsonlines
+          s3_analysis_config_output_path: s3://some-bucket/some-prefix/data-bias-analysis-output-path
+      model_config:
+        factory_function: sagemaker.clarify:ModelConfig
+        kwargs:
+          model_name: test-model
+          instance_count: 1
+          instance_type: ml.t3.medium
+          accept_type: application/json
+          content_type: application/json
+          content_template: "$records"
+          record_template: "$.features"
+      explainability_config:
+        factory_function: sagemaker.clarify:SHAPConfig
+        kwargs:
+          baseline: s3://some-bucket/some-prefix/baseline.jsonl
+          num_samples: 20
+          agg_method: mean_abs
+          seed: 42
+      model_scores:
+        factory_function: sagemaker.clarify:ModelPredictedLabelConfig
+        kwargs:
+          label: "$SageMakerOutput.prediction"
+  skip_check: false
+  register_new_baseline: true
+
+
+# Configuration to test `QualityCheckStep` with DataQualityCheckConfig
+data-quality-check-step:
+  name: test-data-quality-check-step
+  check_job_config_kwargs:
+    base_job_name: data-quality-check-job
+    instance_count: 1
+    instance_type: ml.t3.medium
+  quality_check_config:
+    factory_function: sagemaker.workflow.quality_check_step:DataQualityCheckConfig
+    kwargs:
+      baseline_dataset: s3://some-bucket/some-prefix/some-baseline.jsonl
+      dataset_format:
+        json:
+          lines: true
+      output_s3_uri: s3://some-bucket/some-data-quality
+  skip_check: false
+  register_new_baseline: true
+  supplied_baseline_statistics: s3://some-bucket/some-data-quality/statistics.json
+  supplied_baseline_constraints: s3://some-bucket/some-data-quality/constraints.json
+  model_package_group_name: test-model-package
+  cache_config:
+    factory_function: sagemaker.workflow.steps:CacheConfig
+    kwargs:
+      enable_caching: true
+      expire_after: 7d
+  depends_on:
+    - follow-step
+
+
+# Configuration to test `QualityCheckStep` with ModelQualityCheckConfig
+model-quality-check-step:
+  name: test-model-quality-check-step
+  check_job_config_kwargs:
+    base_job_name: data-quality-check-job
+    instance_count: 1
+    instance_type: ml.t3.medium
+  quality_check_config:
+    factory_function: sagemaker.workflow.quality_check_step:ModelQualityCheckConfig
+    kwargs:
+      baseline_dataset: s3://some-bucket/some-prefix/some-baseline.jsonl
+      dataset_format:
+        json:
+          lines: true
+      output_s3_uri: s3://some-bucket/some-data-quality
+      problem_type: Regression
+      inference_attribute: ".mean"
+      probability_attribute: ".quantiles"
+      ground_truth_attribute: ".gross_sales"
+      probability_threshold_attribute: ".thresholds"
+  skip_check: false
+  register_new_baseline: true
+  supplied_baseline_statistics: s3://some-bucket/some-data-quality/statistics.json
+  supplied_baseline_constraints: s3://some-bucket/some-data-quality/constraints.json
+  model_package_group_name: test-model-package
+  cache_config:
+    factory_function: sagemaker.workflow.steps:CacheConfig
+    kwargs:
+      enable_caching: true
+      expire_after: 7d
+  depends_on:
+    - follow-step
+
+
+# Configuration to test `EMRStep` with existing cluster
+emr-step-with-cluster-id:
+  name: test-emr-step
+  cluster_id: j-XVG123RAND654
+  display_name: test-emr-step
+  description: The test EMR Cluster step
+  # Optional, defaults to pipeline execution role if not provided.
+  # Can only be used with cluster_id (existing cluster)
+  execution_role_arn: arn:aws:iam::123456789:role/test-emr-role
+  emr_step_config_kwargs:
+    jar: command-runner.jar
+    args:
+      - /bin/sh
+      - -c
+      - spark-submit --master yarn --deploy-mode cluster driver.py
+
+
+# Configuration to test `EMRStep` with new cluster via cluster config
+emr-step-with-cluster-config:
+  name: test-emr-step
+  display_name: test-emr-step
+  description: The test EMR Cluster step
+  cluster_config:
+    Applications:
+      - Name: Spark
+    ReleaseLabel: emr-6.7.0
+    Instances:
+      InstanceGroups:
+        - InstanceRole: MASTER
+          InstanceType: r4.4xlarge
+          InstanceCount: 1
+        - InstanceRole: CORE
+          InstanceType: r4.4xlarge
+          InstanceCount: 5
+      Ec2SubnetId: subnet-123  # specify subnet id to stay within team/project network
+      SecurityConfiguration: test-emr-security-configuration  # For securing data
+      JobFlowRole: test-job-flow-role  # Can be same as execution role
+      ServiceRole: test-service-role  # EMR role to manage YARN
+    Configurations:
+      - Classification: container-executor
+        Properties: {}
+        Configurations:
+          Classification: docker
+          Properties:
+            docker.privileged-containers.registries: &trusted-registries local,centos,123456789.dkr.ecr.us-west-2.amazonaws.com
+            docker.trusted.registries: *trusted-registries
+      - Classification: spark
+        Properties:
+          maximizeResourceAllocation: true
+      - Classification: spark-defaults
+        Properties:
+          spark.driver.maxResultSize: 0
+          spark.sql.execution.arrow.pyspark.enabled: true
+          spark.sql.execution.arrow.pyspark.fallback.enabled: false
+          spark.jars.packages: org.postgresql:postgresql:42.2.20,net.snowflake:snowflake-jdbc:3.4.2,net.snowflake:spark-snowflake_2.12:2.9.1-spark_3.1
+          spark.executorEnv.YARN_CONTAINER_RUNTIME_TYPE: docker
+          spark.executorEnv.YARN_CONTAINER_RUNTIME_DOCKER_IMAGE: 123456789.dkr.ecr.us-west-2.amazonaws.com/repo-name:repo-tag
+          spark.yarn.appMasterEnv.YARN_CONTAINER_RUNTIME_TYPE: docker
+          spark.yarn.appMasterEnv.YARN_CONTAINER_RUNTIME_DOCKER_IMAGE: 123456789.dkr.ecr.us-west-2.amazonaws.com/repo-name:repo-tag
+      - Classification: spark-env
+        Properties: {}
+        Configurations:
+          - Classification: export
+            Properties:
+              USER: sagemaker
+  emr_step_config_kwargs:
+    jar: command-runner.jar
+    args:
+      - /bin/sh
+      - -c
+      - spark-submit --master yarn --deploy-mode cluster /opt/aiml/repo-name/driver.py
+
+
+# Configuration to test `EMRStep` with existing cluster and cache config
+emr-step-with-cache-config:
+  name: test-emr-step
+  cluster_id: j-XVG123RAND654
+  display_name: test-emr-step
+  description: The test EMR Cluster step
+  # Optional, defaults to pipeline execution role if not provided.
+  # Can only be used with cluster_id (existing cluster)
+  execution_role_arn: arn:aws:iam::123456789:role/test-emr-role
+  emr_step_config_kwargs:
+    jar: command-runner.jar
+    args:
+      - /bin/sh
+      - -c
+      -
+      - spark-submit --master yarn --deploy-mode cluster driver.py
+  cache_config:
+    factory_function: sagemaker.workflow.steps:CacheConfig
+    kwargs:
+      enable_caching: true
+      expire_after: 7d
+
+
+# Configuration to test `FailStep`
+fail-step:
+  name: test-fail-step
+  error_message: Pipeline failed due to model validation.
+  depends_on:
+    - follow-step
+
+
+# Configuration to test `LambdaStep`
+lambda-step:
+  name: test-lambda-step
+  lambda_func_kwargs:
+    function_arn: arn:aws:lambda:us-west-2:012345678910:function:test-lambda-function
+    runtime: python3.10
+    environment:
+      AWS_DEFAULT_REGION: us-west-2
+  inputs:
+    input-name-0: input-value-0
+    input-name-1: input-value-1
+  outputs:
+    - factory_function: sagemaker.workflow.lambda_step:LambdaOutput
+      kwargs:
+        output_name: test-lambda-output
+        output_type:
+          factory_enum: sagemaker.workflow.lambda_step:LambdaOutputTypeEnum:String
+
+
+# Configuration to test `NotebookJobStep`
+notebook-job-step:
+  name: test-notebook-job
+  notebook_job_kwargs:
+    input_notebook: test_notebook.ipynb
+    image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/repo-name:repo-tag
+    kernel_name: python3
+    environment_variables:
+      AWS_DEFAULT_REGION: us-west-2
+    instance_type: ml.t3.medium
+
+
+# Configuration to test `ProcessingStep`
+processing-step: &processing-step-base
+  name: test-processing-step
+  processor: sagemaker.workflow.steps:Processor
+  processor_kwargs:
+    base_job_name: local-test-job
+    instance_type: ml.t3.medium
+    instance_count: 1
+    image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/repo-name:repo-tag
+    entrypoint:
+      - echo
+    env:
+      ENV_VAR1: ENV_VALUE1
+      ENV_VAR2: ENV_VALUE2
+  step_kwargs:
+    inputs:
+      - factory_function: sagemaker.processing:ProcessingInput
+        kwargs:
+          input_name: demand-config
+          source: s3://test-bucket/input/path
+          destination: /opt/ml/inputs/demand-config
+    outputs:
+      - factory_function: sagemaker.processing:ProcessingOutput
+        kwargs:
+          output_name: job-output
+          source: /opt/ml/output/job_output
+          destination: s3://test-bucket/output/path
+    arguments:
+      - Hello
+      - World
+  depends_on:
+    - follow-step
+
+
+# Configuration to test `ProcessingStep` with `CacheConfig`
+processing-step-with-cache-config:
+  <<: *processing-step-base
+  cache_config:
+    factory_function: sagemaker.workflow.steps:CacheConfig
+    kwargs:
+      enable_caching: "True"
+      expire_after: 7d
+
+
+# Configuration to test `ProcessingStep` with `RetryPolicies`
+processing-step-with-retry-policies:
+  <<: *processing-step-base
+  retry_policies:
+    - factory_function: sagemaker.workflow.retry:SageMakerJobStepRetryPolicy
+      kwargs:
+        exception_types:
+          - factory_enum: sagemaker.workflow.retry:SageMakerJobExceptionTypeEnum:INTERNAL_ERROR
+          - factory_enum: sagemaker.workflow.retry:SageMakerJobExceptionTypeEnum:CAPACITY_ERROR
+          - factory_enum: sagemaker.workflow.retry:SageMakerJobExceptionTypeEnum:RESOURCE_LIMIT
+        interval_seconds: 1
+        backoff_rate: 2
+        max_attempts: 2
+        expire_after_mins: 10
+    - factory_function: sagemaker.workflow.retry:StepRetryPolicy
+      kwargs:
+        exception_types:
+          - factory_enum: sagemaker.workflow.retry:StepExceptionTypeEnum:SERVICE_FAULT
+          - factory_enum: sagemaker.workflow.retry:StepExceptionTypeEnum:THROTTLING
+        interval_seconds: 1
+        backoff_rate: 2
+        max_attempts: 2
+        expire_after_mins: 10
+
+
+# Configuration to test `ProcessingStep` with `PropertyFiles`
+processing-step-with-property-files:
+  <<: *processing-step-base
+  property_files:
+    - factory_function: &property-file-instance sagemaker.workflow.properties:PropertyFile
+      kwargs:
+        name: PropertyFileA
+        output_name: test0
+        path: test0.json
+    - factory_function: *property-file-instance
+      kwargs:
+        name: PropertyFileB
+        output_name: test1
+        path: test1.json
+
+
+# Configuration to test `ModelStep` with `Model.register`
+register-model-step:
+  name: test-register-model-step
+  model: sagemaker.model:Model
+  model_kwargs: *model_kwargs
+  register_model_kwargs:
+    content_types:
+      - application/json
+    response_types:
+      - application/json
+    inference_instances:
+      - ml.t3.medium
+    transform_instances:
+      - ml.t3.medium
+    model_package_group_name: some-forecasting-model
+    model_metrics:
+      factory_function: sagemaker.model_metrics:ModelMetrics
+      kwargs:
+        model_statistics:
+          factory_function: sagemaker.model_metrics:MetricsSource
+          kwargs:
+            s3_uri: s3://some-bucket/some-prefix/some-evaluation.json
+            content_type: application/json
+    metadata_properties:
+      factory_function: sagemaker.metadata_properties:MetadataProperties
+      kwargs:
+        commit_id: git-sha123456
+        repository: https://github.com/nike-lab222/mlops_template.git
+        generated_by: team-alpha
+        project_id: project-beta
+    approval_status: Approved
+    drift_check_baselines:
+      factory_function: sagemaker.drift_check_baselines:DriftCheckBaselines
+      kwargs:
+        model_data_statistics:
+          factory_function: sagemaker.model_metrics:MetricsSource
+          kwargs:
+            s3_uri: s3://some-bucket/some-prefix/some-statistics.json
+            content_type: application/json
+        model_data_constraints:
+          factory_function: sagemaker.model_metrics:MetricsSource
+          kwargs:
+            s3_uri: s3://some-bucket/some-prefix/some-constraints.json
+            content_type: application/json
+    customer_metadata_properties:
+      data_owner: data-team
+      model_owner: data-science-team
+      pipeline_owner: engineering-team
+    domain: MACHINE_LEARNING
+    task: REGRESSION
+    sample_payload_url: s3://some-bucket/some-prefix/some-payload.jsonl
+
+
+# Configuration to test `TrainingStep`
+train-step:
+  name: train-step
+  estimator: sagemaker.estimator:Estimator
+  estimator_kwargs:
+    base_job_name: local-train-job
+    instance_count: 1
+    instance_type: ml.t3.medium
+    image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/repo-name:repo-tag
+    output_path: s3://some-bucket/some-prefix
+  fit_kwargs:
+    inputs:
+      train:
+        factory_function: sagemaker.inputs:TrainingInput
+        kwargs:
+          s3_data: s3://some-bucket/some-prefix/some-train.jsonl
+          content_type: json
+      test:
+        factory_function: sagemaker.inputs:TrainingInput
+        kwargs:
+          s3_data: s3://some-bucket/some-prefix/some-test.jsonl
+          content_type: json
+  depends_on:
+    - follow-step
+
+
+# Configuration to test `TransformStep`
+transform-step:
+  name: test-transform-step
+  transformer: sagemaker.transformer:Transformer
+  transformer_kwargs:
+    base_transform_job_name: test-transform-job
+    model_name: deployed-model
+    instance_count: 1
+    instance_type: ml.t3.medium
+    strategy: SingleRecord
+    assemble_with: Line
+    output_path: s3://some-bucket/some-prefix/some-object
+    accept: application/jsonlines
+  step_kwargs:
+    data: s3://some-bucket/some-prefix/some-object.jsonl
+    data_type: S3Prefix
+    content_type: application/jsonlines
+    split_type: Line
+    batch_data_capture_config:
+      factory_function: sagemaker.inputs:BatchDataCaptureConfig
+      kwargs:
+        destination_s3_uri: s3://some-bucket/some-prefix/some-data-capture
+    model_client_config: null
+    input_filter: "$.features"
+    output_filter: "$['gtinRsc', 'SageMakerOutput']"
+    join_source: Input
+  depends_on:
+    - follow-step
+
+
+# Configuration to test `TuningStep`
+tune-step:
+  name: test-tune-step
+  estimator: sagemaker.estimator:Estimator
+  estimator_kwargs:
+    base_job_name: local-train-job
+    instance_count: 1
+    instance_type: ml.t3.medium
+    hyperparameters:
+      time_freq: D
+      prediction_length: 28
+      likelihood: negative-binomial
+      early_stopping_patience: 80
+    image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/repo-name:repo-tag
+    output_path: s3://some-bucket/some-prefix
+  tuner: sagemaker.tuner:HyperparameterTuner
+  tuner_kwargs:
+    objective_metric_name: "test:RMSE"
+    hyperparameter_ranges:
+      epochs:
+        factory_function: sagemaker.parameter:IntegerParameter
+        kwargs:
+          min_value: 10
+          max_value: 50
+      context_length:
+        factory_function: sagemaker.parameter:IntegerParameter
+        kwargs:
+          min_value: 21
+          max_value: 35
+      mini_batch_size:
+        factory_function: sagemaker.parameter:IntegerParameter
+        kwargs:
+          min_value: 32
+          max_value: 128
+      learning_rate:
+        factory_function: sagemaker.parameter:ContinuousParameter
+        kwargs:
+          min_value: 1e-5
+          max_value: 1e-1
+      num_cells:
+        factory_function: sagemaker.parameter:IntegerParameter
+        kwargs:
+          min_value: 30
+          max_value: 100
+      num_layers:
+        factory_function: sagemaker.parameter:IntegerParameter
+        kwargs:
+          min_value: 1
+          max_value: 4
+    metric_definitions:
+      - Name: "test:RMSE"
+        Regex: 'test:RMSE=([0-9\\.]+)'
+    objective_type: Minimize
+    max_jobs: 20
+    max_parallel_jobs: 10
+  fit_kwargs:
+    inputs:
+      train:
+        factory_function: sagemaker.inputs:TrainingInput
+        kwargs:
+          s3_data: s3://some-bucket/some-prefix/some-train.jsonl
+          content_type: json
+      test:
+        factory_function: sagemaker.inputs:TrainingInput
+        kwargs:
+          s3_data: s3://some-bucket/some-prefix/some-test.jsonl
+          content_type: json
+  depends_on:
+    - follow-step

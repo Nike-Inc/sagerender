@@ -1,0 +1,4 @@
+[flake8]
+max-line-length = 89
+; Ignoring "line too long" error. Other codes can be appended, separated by comma
+extend-ignore = E501 B005 F541 F811

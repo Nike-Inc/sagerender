@@ -1,0 +1,13 @@
+---
+resource_config:
+  region: us-west-2
+  execution_role: "arn:aws:iam::228324031390:role/at-platform0-uswest2-%{team}"
+  security_group_ids:
+    - sg-123
+  subnets:
+    - subnet-123
+    - subnet-456
+    - subnet-789
+
+bucket_prefix: "at-%{team}0-uswest2"
+s3_bucket_prefix: "s3://%{lookup('bucket_prefix')}-artifacts/{USER}"

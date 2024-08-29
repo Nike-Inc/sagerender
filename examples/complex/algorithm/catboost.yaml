@@ -1,0 +1,44 @@
+---
+standard-model-training-pipeline:
+  training-step:
+    estimator: sagemaker.estimator:Estimator
+    estimator_kwargs:
+      instance_count: 1
+      instance_type: &train-instance-type ml.m5.xlarge
+      image_uri:
+        factory_function: sagemaker.image_uris:retrieve
+        kwargs:
+          region: null
+          framework: null
+          model_id: catboost-classification-model
+          model_version: "2.1.0"
+          image_scope: training
+          instance_type: *train-instance-type
+      entry_point: examples/scripts/run_step.py
+      output_path: "%{lookup('s3_bucket_prefix')}/catboost-model"
+      hyperparameters:
+        iterations: 500
+        early_stopping_rounds: 5
+        eval_metric: RMSE
+        depth: 10
+        boosting_type: Plain
+        grow_policy: Lossguide
+
+  create-model-step:
+    model_kwargs: &model-kwargs
+      image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/custom-catboost-inference:git-1234xyz
+
+  register-model-step:
+    model_kwargs: *model-kwargs
+
+  create-register-model-or-fail-step:
+    conditions:
+      - factory_function: sagemaker.workflow.conditions:ConditionLessThanOrEqualTo
+        kwargs:
+          left:
+            factory_function: sagemaker.workflow.functions:JsonGet
+            kwargs:
+              step_name: "%{algorithm}-evaluate-step"
+              property_file: EvaluationReport
+              json_path: metric.RMSE
+          right: 2300

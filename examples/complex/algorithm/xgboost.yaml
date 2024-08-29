@@ -1,0 +1,38 @@
+---
+standard-model-training-pipeline:
+  training-step:
+    estimator: sagemaker.xgboost.estimator:XGBoost
+    estimator_kwargs:
+      instance_count: 1
+      instance_type: ml.m4.xlarge
+      framework_version: 1.7-1
+      entry_point: examples/scripts/run_step.py
+      output_path: "%{lookup('s3_bucket_prefix')}/xgboost-model"
+      hyperparameters:
+        max_depth: 5
+        eta: 0.2
+        gamma: 4
+        min_child_weight: 6
+        subsample: 0.8
+        objective: "reg:squarederror"
+        early_stopping_rounds: 10
+        num_round: 50
+
+  create-model-step:
+    model_kwargs: &model-kwargs
+      image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/custom-xgboost-inference:git-1234xyz
+
+  register-model-step:
+    model_kwargs: *model-kwargs
+
+  create-register-model-or-fail-step:
+    conditions:
+      - factory_function: sagemaker.workflow.conditions:ConditionLessThanOrEqualTo
+        kwargs:
+          left:
+            factory_function: sagemaker.workflow.functions:JsonGet
+            kwargs:
+              step_name: "%{algorithm}-evaluate-step"
+              property_file: EvaluationReport
+              json_path: metric.MAPE
+          right: 1.85

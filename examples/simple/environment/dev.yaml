@@ -1,0 +1,16 @@
+---
+
+cerberus:
+  sdb:
+    team: "app/ct-commercial0-uswest2-%{team}/team_info"
+    network: "app/ct-commercial0-uswest2-%{team}/network"
+
+bucket_prefix: ct-commercial0-uswest2
+
+local-pipeline:
+  processor-step:
+    processor_kwargs:
+      base_job_name: "local-test-job-%{env}"
+    step_kwargs:
+      arguments:
+        - "dev"

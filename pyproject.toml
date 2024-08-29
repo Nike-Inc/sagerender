@@ -1,0 +1,99 @@
+[tool.poetry]
+name = "sagerender"
+version = "2.1.0"
+description = "A library for configuring SageMaker pipelines using hierarchical configuration pattern."
+authors = [
+    "Mohamed Abdul Huq Ismail <Abdul.Ismail@nike.com>",
+    "Francisco Bolaños <Francisco.Bolanos@nike.com>",
+    "Piyush Tripathi <Piyush.Tripathi@nike.com>",
+    "Matt Struble <Matt.Struble@nike.com>",
+    "Saniya Lakka <Saniya.Lakka@nike.com>",
+    "Hari Ramachandran <Hari.Ramachandran@nike.com>"
+]
+maintainers = [
+    "Divyanshu Narendra <Divyanshu.Narendra@nike.com>",
+]
+keywords = ["phiera", "sagemaker-sdk", "sagerender"]
+readme = "README.md"
+repository = "https://github.com/nike-lab222/sagerender"
+packages = [
+  { include = "sagerender" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.10.10"
+boto3 = { version = "^1.34.55" }
+botocore = { version = "^1.34.55" }
+cerberus-python-client = { version = "^2.5.4" }
+sagemaker = { version = "^2.211.0" }
+phiera = { version = "^2.1.0" }
+multipledispatch = { version = "^1.0.0" }
+PyYAML = { version = "^6.0.1" }
+pydantic = { version = "^2.6.3" }
+
+[tool.poetry.dev-dependencies]
+parameterized = { version = "^0.9.0" }
+pytest = { version = "^8.0.2" }
+pytest-cov = { version = "^4.1.0" }
+more-itertools = { version = "^10.2.0" }
+coverage = { version = "^7.4.3" }
+pre-commit = { version = "^3.6.2" }
+pre-commit-hooks = { version = "^4.5.0" }
+flake8 = { version = "^7.0.0" }
+isort = { version = "^5.13.2" }
+black = { version = "^24.2.0" }
+notebook = { version = "^7.1.1" }
+deptry = { version = "^0.12.0" }
+yamllint = { version = "^1.35.1" }
+
+[tool.poetry.scripts]
+sagerender = "sagerender.cli.commands:main"
+
+[tool.poetry.plugins."sagerender.cli.command"]
+version = "sagerender.cli.version:main"
+upsert-pipeline = "sagerender.cli.upsert_pipeline:main"
+run-pipeline = "sagerender.cli.run_pipeline:main"
+
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report html --cov-report term-missing --cov-fail-under 80"
+
+[tool.coverage.run]
+source = ["sagerender"]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+  # Have to re-enable the standard pragma
+  "pragma: no cover",
+  # Don't complain about missing debug-only code:
+  "def __repr__",
+  # Don't complain if tests don't hit defensive assertion code:
+  "raise AssertionError",
+  "raise NotImplementedError",
+  # Don't complain if non-runnable code isn't run:
+  "if 0:",
+  "if __name__ == .__main__.:",
+]
+
+[tool.ruff]
+src = ["sagerender"]
+line-length = 89
+target-version = "py310"
+
+[tool.ruff.lint]
+# B: Check for issues detected by flake8-bugbear plugin
+# C: Check for issues detected by pycodestyle (PEP 8 compliance)
+# E: Check for syntax errors and other issues that prevent code from being parsed correctly
+# F: Check for errors or other problems that can cause code to fail at runtime
+# W: Check for non-idiomatic or non-standard code that may work but is discouraged
+# I: Check for importing sorting
+select = ["B", "C", "E", "F", "W", "I"]
+# E203: Colons should not have any space before them, e.g. my_list[1: 3]
+# E266: Unnecessary whitespace before or after an operator, e.g. y = x + 1
+# F811: Redefinition of unused methods
+# B024: Abstract base class defined without abstract methods
+ignore = ["E203", "E266", "F811", "B024"]
+
+[build-system]
+requires = ["poetry-core>=1.5.2"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,101 @@
+---
+# Copyright 2024-present, Nike, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the Apache-2.0 license found in
+# the LICENSE file in the root directory of this source tree.
+
+name: test-pipeline
+parameters:
+  param-1:
+    type: sagemaker.workflow.parameters:ParameterString
+    default_value: null
+  param-2:
+    type: sagemaker.workflow.parameters:ParameterString
+    default_value: ml.t3.medium
+  param-3:
+    type: sagemaker.workflow.parameters:ParameterString
+    default_value: ENV_VALUE2
+
+property_files:
+  PropertyFileA:
+    output_name: test0
+    path: test0.json
+  PropertyFileB:
+    output_name: test1
+    path: test1.json
+
+step-0:
+  name: test-step-0
+  processor: sagemaker.workflow.steps:Processor
+  processor_kwargs:
+    base_job_name: local-test-job
+    instance_type: param:param-2
+    instance_count: 1
+    image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/repo-name:repo-tag
+    entrypoint:
+      - echo
+    env:
+      ENV_VAR1: ENV_VALUE1
+      ENV_VAR2: param:param-3
+  step_kwargs:
+    arguments:
+      - Hello
+      - World
+      - factory_function: sagemaker.workflow.functions:Join
+        kwargs:
+          "on": /
+          values:
+            - s3:/
+            - param:param-1
+            - exec:PIPELINE_EXECUTION_ID
+            - model.tar.gz
+  property_files:
+    - propertyFile:PropertyFileA
+    - propertyFile:PropertyFileB
+step-1:
+  name: test-step-1
+  processor: sagemaker.workflow.steps:Processor
+  processor_kwargs:
+    base_job_name: local-test-job
+    instance_type: ml.t3.medium
+    instance_count: 3
+    image_uri: 123456789.dkr.ecr.us-west-2.amazonaws.com/repo-name:repo-tag
+    entrypoint:
+      - python
+  step_kwargs:
+    arguments:
+      - /opt/ml/code/test.py
+      - param:param-1
+      - factory_function: sagemaker.workflow.functions:JsonGet
+        kwargs:
+          step_name: test-step-0.properties.step_name
+          property_file: propertyFile:PropertyFileA
+          json_path: test0
+  cache_config:
+    factory_function: sagemaker.workflow.steps:CacheConfig
+    kwargs:
+      enable_caching: True
+      expire_after: 7d
+  depends_on:
+    - test-step-0
+  retry_policies:
+    - factory_function: sagemaker.workflow.retry:SageMakerJobStepRetryPolicy
+      kwargs:
+        exception_types:
+          - factory_enum: sagemaker.workflow.retry:SageMakerJobExceptionTypeEnum:INTERNAL_ERROR
+          - factory_enum: sagemaker.workflow.retry:SageMakerJobExceptionTypeEnum:CAPACITY_ERROR
+          - factory_enum: sagemaker.workflow.retry:SageMakerJobExceptionTypeEnum:RESOURCE_LIMIT
+        interval_seconds: 1
+        backoff_rate: 2
+        max_attempts: 2
+        expire_after_mins: 10
+    - factory_function: sagemaker.workflow.retry:StepRetryPolicy
+      kwargs:
+        exception_types:
+          - factory_enum: sagemaker.workflow.retry:StepExceptionTypeEnum:SERVICE_FAULT
+          - factory_enum: sagemaker.workflow.retry:StepExceptionTypeEnum:THROTTLING
+        interval_seconds: 1
+        backoff_rate: 2
+        max_attempts: 2
+        expire_after_mins: 10

@@ -1,6 +1,16 @@
 # SageRender
-![coverage](https://img.shields.io/badge/coverage-87%25-brightgreen) ![tests](https://img.shields.io/badge/tests-passed-green)
+---
+[![codecov](https://codecov.io/gh/Nike-Inc/sagerender/branch/main/graph/badge.svg?token=0TvSUJHvH2)](https://codecov.io/gh/Nike-Inc/sagerender)
+[![Test](https://github.com/Nike-Inc/sagerender/actions/workflows/python-test.yaml/badge.svg)](https://github.com/Nike-Inc/sagerender/actions/workflows/python-test.yaml) 
+[![PyPi Release](https://github.com/Nike-Inc/sagerender/actions/workflows/python-build.yaml/badge.svg)](https://github.com/Nike-Inc/sagerender/actions/workflows/python-build.yaml) 
+[![Docker Build](https://github.com/Nike-Inc/sagerender/actions/workflows/docker-build.yaml/badge.svg)](https://github.com/Nike-Inc/sagerender/actions/workflows/docker-build.yaml)
+![License](https://img.shields.io/pypi/l/knockoff)
+![Python Versions](https://img.shields.io/pypi/pyversions/knockoff)
+![Docker Image Size](https://img.shields.io/docker/image-size/nikelab222/sagerender/latest)
+![Python Wheel](https://img.shields.io/pypi/wheel/knockoff)
+
 ![](extras/sagerender-pipeline-design.png)
+
 A library for configuring SageMaker pipelines using hierarchical configuration pattern. The purpose of this library is to isolate depdency on AWS SageMaker SDK and allow teams to create pipelines using configurations. The hierarchical configuration gives teams flexibility to use a lookups in configuration files to traverse through the hierarchy of configurations.
 
 ## Table of Contents

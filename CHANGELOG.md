@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.<br/>
 `sagerender` adheres to [Semantic Versioning](http://semver.org/).
 
 #### 2.x Releases
-- `2.1.x` Releases - [2.1.0](#210) | [2.1.1](#211) | [2.1.2](#212)
+- `2.1.x` Releases - [2.1.0](#210) | [2.1.1](#211) | [2.1.2](#212) | [2.1.3](#213)
 - `2.0.x` Releases - [2.0.0](#200)
 
 #### 1.x Releases
@@ -29,6 +29,11 @@ All notable changes to this project will be documented in this file.<br/>
 #### Removed
 
 #### Fixed
+
+---
+## 2.1.3
+#### Added
+* Added License information in pyproject.toml
 
 ---
 ## 2.1.2
